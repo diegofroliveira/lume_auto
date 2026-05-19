@@ -257,7 +257,13 @@
 
                         <div class="filter-group">
                             <label>Cidade de Origem</label>
-                            <input type="text" class="filter-text" id="hunter-city-input" placeholder="Ex: São Paulo, Campinas..." value="São Paulo">
+                            <select class="filter-select" id="hunter-city-select">
+                                <option value="São Paulo">São Paulo - SP</option>
+                                <option value="Campinas">Campinas - SP</option>
+                                <option value="Jundiaí">Jundiaí - SP</option>
+                                <option value="Santo André">Santo André - SP</option>
+                                <option value="São Bernardo">São Bernardo - SP</option>
+                            </select>
                         </div>
 
                         <div class="filter-group">
@@ -412,6 +418,7 @@
         </div>
     </main>
 
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="app.js"></script>
 </body>
 </html>

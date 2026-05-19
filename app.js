@@ -234,6 +234,189 @@ const state = {
 };
 
 // ==========================================================================
+// SUPABASE CLIENT INTEGRATION & SYNCHRONIZATION
+// ==========================================================================
+const supabaseUrl = 'https://xeheyokngyuwdpnuthbz.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhlaGV5b2tuZ3l1d2RwbnV0aGJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkyMTgxOTksImV4cCI6MjA5NDc5NDE5OX0.8Df2jzL_YoF9QJZm6BeR7pWYXNqlEVJgVOiO3XxbUM4';
+let supabase = null;
+let isSupabaseActive = false;
+
+try {
+    if (window.supabase) {
+        supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+    }
+} catch (e) {
+    console.warn("Could not load Supabase script or initialize client:", e);
+}
+
+async function checkSupabaseConnection() {
+    if (!supabase) return;
+    try {
+        const { data, error } = await supabase.from('leads').select('id').limit(1);
+        if (!error) {
+            isSupabaseActive = true;
+            console.log("⚡ Supabase conectado com sucesso!");
+            
+            // Try to load chats
+            await loadChatsFromSupabase();
+        } else {
+            console.warn("⚠️ Supabase: Tabelas não encontradas ou acesso RLS bloqueado. Executando em Modo Sandbox.", error);
+        }
+    } catch(e) {
+        console.warn("⚠️ Falha na integração com Supabase. Executando em Modo Sandbox.", e);
+    }
+}
+
+async function loadChatsFromSupabase() {
+    if (!isSupabaseActive) return;
+    try {
+        const { data: leads, error: leadsErr } = await supabase.from('leads').select('*').order('last_active_time', { ascending: false });
+        if (leadsErr) throw leadsErr;
+        
+        if (leads && leads.length > 0) {
+            const chats = [];
+            for (const lead of leads) {
+                // Fetch messages for this lead
+                const { data: msgs, error: msgsErr } = await supabase.from('messages').select('*').eq('lead_id', lead.id).order('created_at', { ascending: true });
+                
+                const messages = (msgs || []).map(m => {
+                    const date = new Date(m.created_at);
+                    const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+                    return {
+                        sender: m.sender_type === 'customer' ? 'received' : 'sent',
+                        text: m.content,
+                        time: timeStr,
+                        isAI: m.sender_type === 'ai'
+                    };
+                });
+                
+                const initials = lead.customer_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                
+                chats.push({
+                    id: lead.id,
+                    name: lead.customer_name,
+                    channel: lead.channel,
+                    lastTime: new Date(lead.last_active_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    avatarText: initials || 'LE',
+                    vehicle: lead.vehicle_interested,
+                    aiStatus: lead.ai_status,
+                    lastMessage: lead.last_message,
+                    messages: messages
+                });
+            }
+            state.chats = chats;
+            if (chats.length > 0) {
+                state.activeChatId = chats[0].id;
+            }
+            // Trigger UI rerender
+            setupInboxModule();
+            updateDashboardSummary();
+        } else {
+            // Seed DB with mock data if it is empty!
+            await seedMockDataToSupabase();
+        }
+    } catch (e) {
+        console.error("Error loading chats from Supabase:", e);
+    }
+}
+
+async function seedMockDataToSupabase() {
+    if (!isSupabaseActive) return;
+    try {
+        console.log("Seeding default chats to Supabase...");
+        
+        // Retrieve profile or first available consultant
+        const { data: profiles } = await supabase.from('profiles').select('id').limit(1);
+        let consultantId = profiles && profiles.length > 0 ? profiles[0].id : null;
+        
+        if (!consultantId) {
+            console.warn("Nenhum perfil de consultor encontrado em profiles. Cadastre um usuário no banco para habilitar persistência com RLS.");
+            return;
+        }
+        
+        for (const chat of state.chats) {
+            const { data: newLead, error: leadErr } = await supabase.from('leads').insert({
+                consultant_id: consultantId,
+                customer_name: chat.name,
+                channel: chat.channel,
+                vehicle_interested: chat.vehicle,
+                ai_status: chat.aiStatus,
+                last_message: chat.lastMessage
+            }).select().single();
+            
+            if (leadErr) {
+                console.warn("Erro ao inserir lead no Supabase:", leadErr);
+                continue;
+            }
+            
+            const msgsToInsert = chat.messages.map(m => ({
+                lead_id: newLead.id,
+                sender_type: m.sender === 'received' ? 'customer' : (m.isAI ? 'ai' : 'consultant'),
+                content: m.text
+            }));
+            
+            await supabase.from('messages').insert(msgsToInsert);
+        }
+        
+        console.log("Banco seeded com dados padrão com sucesso!");
+        await loadChatsFromSupabase();
+    } catch(e) {
+        console.error("Erro no seeding do Supabase:", e);
+    }
+}
+
+async function saveMessageToSupabase(leadId, senderType, content) {
+    if (!isSupabaseActive) return;
+    try {
+        const { error } = await supabase.from('messages').insert({
+            lead_id: leadId,
+            sender_type: senderType,
+            content: content
+        });
+        if (error) throw error;
+        
+        await supabase.from('leads').update({
+            last_message: content,
+            last_active_time: new Date().toISOString()
+        }).eq('id', leadId);
+    } catch(e) {
+        console.error("Erro ao salvar mensagem no Supabase:", e);
+    }
+}
+
+async function updateAIStatusInSupabase(leadId, aiStatus) {
+    if (!isSupabaseActive) return;
+    try {
+        await supabase.from('leads').update({
+            ai_status: aiStatus
+        }).eq('id', leadId);
+    } catch(e) {
+        console.error("Erro ao atualizar status de IA no Supabase:", e);
+    }
+}
+
+async function saveInspectionReportToSupabase(vehicleModel, riskLevel, checklistState, notes) {
+    if (!isSupabaseActive) return;
+    try {
+        const { data: profiles } = await supabase.from('profiles').select('id').limit(1);
+        const consultantId = profiles && profiles.length > 0 ? profiles[0].id : null;
+        
+        if (!consultantId) return;
+        
+        await supabase.from('inspection_reports').insert({
+            consultant_id: consultantId,
+            vehicle_model: vehicleModel,
+            risk_level: riskLevel,
+            checklist_state: checklistState,
+            notes: notes
+        });
+        console.log("Dossiê salvo no Supabase!");
+    } catch(e) {
+        console.error("Erro ao salvar dossiê no Supabase:", e);
+    }
+}
+
+// ==========================================================================
 // APPLICATION INITIALIZATION & NAVIGATION
 // ==========================================================================
 function initApp() {
@@ -242,6 +425,7 @@ function initApp() {
     setupHunterModule();
     setupRadarModule();
     updateDashboardSummary();
+    checkSupabaseConnection();
 }
 
 function setupNavigation() {
@@ -345,14 +529,18 @@ function setupInboxModule() {
         
         // Update status of active chat if AI is toggled off
         const activeChat = state.chats.find(c => c.id === state.activeChatId);
-        if (!state.aiActive && activeChat.aiStatus === 'ai') {
-            activeChat.aiStatus = 'human';
-            renderThreads();
-            renderActiveChat();
-        } else if (state.aiActive && activeChat.aiStatus === 'human' && activeChat.id !== 'chat_1') {
-            activeChat.aiStatus = 'ai';
-            renderThreads();
-            renderActiveChat();
+        if (activeChat) {
+            if (!state.aiActive && activeChat.aiStatus === 'ai') {
+                activeChat.aiStatus = 'human';
+                updateAIStatusInSupabase(activeChat.id, 'human');
+                renderThreads();
+                renderActiveChat();
+            } else if (state.aiActive && activeChat.aiStatus === 'human' && activeChat.id !== 'chat_1') {
+                activeChat.aiStatus = 'ai';
+                updateAIStatusInSupabase(activeChat.id, 'ai');
+                renderThreads();
+                renderActiveChat();
+            }
         }
     });
     
@@ -465,6 +653,9 @@ function setupInboxModule() {
         renderThreads();
         renderActiveChat();
         
+        // Save to Supabase
+        saveMessageToSupabase(chat.id, 'consultant', text);
+        
         // Simulate potential buyer answer after 2.5 seconds (Simulação Interativa)
         if (chat.id === 'chat_2' || chat.id === 'chat_3') {
             simulateBuyerResponse(chat);
@@ -494,6 +685,9 @@ function setupInboxModule() {
             
             chat.lastMessage = replyText;
             chat.lastTime = timeStr;
+            
+            // Save to Supabase
+            saveMessageToSupabase(chat.id, 'customer', replyText);
             
             // Trigger AI auto-response if toggle is active and not escalated
             if (state.aiActive && chat.aiStatus === 'ai') {
@@ -532,8 +726,12 @@ function setupInboxModule() {
             chat.lastMessage = aiText;
             chat.lastTime = timeStr;
             
+            // Save to Supabase
+            saveMessageToSupabase(chat.id, 'ai', aiText);
+            
             if (escalate) {
                 chat.aiStatus = 'human';
+                updateAIStatusInSupabase(chat.id, 'human');
                 // Trigger browser chime or sound alert if supported
                 playNotificationSound();
             }
@@ -584,7 +782,7 @@ function setupHunterModule() {
     const kmValue = document.getElementById('hunter-km-value');
     
     // New controls for City and Radius
-    const cityInput = document.getElementById('hunter-city-input');
+    const cityInput = document.getElementById('hunter-city-select');
     const radiusSlider = document.getElementById('hunter-radius-slider');
     const radiusValue = document.getElementById('hunter-radius-value');
     
@@ -947,7 +1145,15 @@ function setupRadarModule() {
         const checkedItems = document.querySelectorAll('.checklist-item.checked');
         const totalItems = document.querySelectorAll('.checklist-item');
         
-        let reportDetails = `Dossiê Lume gerado para o veículo ${document.getElementById('radar-car-name').textContent}.\n`;
+        const vehicleModel = document.getElementById('radar-car-name').textContent;
+        const riskLevel = state.radarSearchResult ? state.radarSearchResult.riskLevel : 'yellow';
+        const checkedTitles = Array.from(checkedItems).map(item => item.querySelector('h5').textContent);
+        const checklistState = { checked: checkedTitles };
+        const notes = document.getElementById('radar-owner-comment').textContent;
+        
+        saveInspectionReportToSupabase(vehicleModel, riskLevel, checklistState, notes);
+        
+        let reportDetails = `Dossiê Lume gerado para o veículo ${vehicleModel}.\n`;
         reportDetails += `Itens inspecionados com sucesso: ${checkedItems.length} de ${totalItems.length}.\n`;
         
         alert(`🎉 Dossiê Digital "Lume" Gerado com Sucesso!\n\nUm link de acesso web contendo a análise completa de problemas crônicos e o laudo cautelar da inspeção física foi gerado e está pronto para ser enviado via WhatsApp para o seu cliente!`);
