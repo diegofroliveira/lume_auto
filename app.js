@@ -458,34 +458,42 @@ function setupNavigation() {
         radar: { main: 'radar de crônicos', sub: 'dossiê técnico de falhas conhecidas e opinião de donos' }
     };
     
-    navItems.forEach(item => {
-        item.addEventListener('click', () => {
-            const targetTab = item.getAttribute('data-tab');
-            if (!targetTab) return;
-            
-            state.currentTab = targetTab;
-            
-            // Toggle active classes on nav
-            navItems.forEach(n => n.classList.remove('active'));
-            item.classList.add('active');
-            
-            // Toggle active section
-            sections.forEach(sec => {
-                sec.classList.remove('active');
-                if (sec.id === `${targetTab}-section`) {
-                    sec.classList.add('active');
+    if (navItems) {
+        navItems.forEach(item => {
+            item.addEventListener('click', () => {
+                const targetTab = item.getAttribute('data-tab');
+                if (!targetTab) return;
+                
+                state.currentTab = targetTab;
+                
+                // Toggle active classes on nav
+                navItems.forEach(n => n.classList.remove('active'));
+                item.classList.add('active');
+                
+                // Toggle active section
+                if (sections) {
+                    sections.forEach(sec => {
+                        sec.classList.remove('active');
+                        if (sec.id === `${targetTab}-section`) {
+                            sec.classList.add('active');
+                        }
+                    });
+                }
+                
+                // Update Header text
+                if (headerTitle && titles[targetTab]) {
+                    headerTitle.textContent = titles[targetTab].main;
+                }
+                if (headerSub && titles[targetTab]) {
+                    headerSub.textContent = titles[targetTab].sub;
+                }
+                
+                if (targetTab === 'dashboard') {
+                    updateDashboardSummary();
                 }
             });
-            
-            // Update Header text
-            headerTitle.textContent = titles[targetTab].main;
-            headerSub.textContent = titles[targetTab].sub;
-            
-            if (targetTab === 'dashboard') {
-                updateDashboardSummary();
-            }
         });
-    });
+    }
 }
 
 function updateDashboardSummary() {
@@ -493,8 +501,14 @@ function updateDashboardSummary() {
     const activeChatsCount = state.chats.length;
     const pendingAttention = state.chats.filter(c => c.aiStatus === 'human').length;
     
-    document.getElementById('kpi-active-leads').textContent = activeChatsCount;
-    document.getElementById('kpi-pending-human').textContent = pendingAttention;
+    const kpiActiveLeads = document.getElementById('kpi-active-leads');
+    if (kpiActiveLeads) {
+        kpiActiveLeads.textContent = activeChatsCount;
+    }
+    const kpiPendingHuman = document.getElementById('kpi-pending-human');
+    if (kpiPendingHuman) {
+        kpiPendingHuman.textContent = pendingAttention;
+    }
     
     // Fill recent activities log dynamically
     const logList = document.getElementById('recent-activity-list');
@@ -541,41 +555,52 @@ function setupInboxModule() {
     const aiToggle = document.getElementById('ai-active-toggle');
     
     // Render list of threads
-    renderThreads();
-    renderActiveChat();
+    if (threadContainer) {
+        renderThreads();
+    }
+    if (msgContainer) {
+        renderActiveChat();
+    }
     
     if (state.inboxInitialized) return;
     state.inboxInitialized = true;
     
     // Toggle AI Button click
-    aiToggle.addEventListener('click', () => {
-        state.aiActive = !state.aiActive;
-        aiToggle.classList.toggle('active', state.aiActive);
-        
-        // Update status of active chat if AI is toggled off
-        const activeChat = state.chats.find(c => c.id === state.activeChatId);
-        if (activeChat) {
-            if (!state.aiActive && activeChat.aiStatus === 'ai') {
-                activeChat.aiStatus = 'human';
-                updateAIStatusInSupabase(activeChat.id, 'human');
-                renderThreads();
-                renderActiveChat();
-            } else if (state.aiActive && activeChat.aiStatus === 'human' && activeChat.id !== 'chat_1') {
-                activeChat.aiStatus = 'ai';
-                updateAIStatusInSupabase(activeChat.id, 'ai');
-                renderThreads();
-                renderActiveChat();
+    if (aiToggle) {
+        aiToggle.addEventListener('click', () => {
+            state.aiActive = !state.aiActive;
+            aiToggle.classList.toggle('active', state.aiActive);
+            
+            // Update status of active chat if AI is toggled off
+            const activeChat = state.chats.find(c => c.id === state.activeChatId);
+            if (activeChat) {
+                if (!state.aiActive && activeChat.aiStatus === 'ai') {
+                    activeChat.aiStatus = 'human';
+                    updateAIStatusInSupabase(activeChat.id, 'human');
+                    if (threadContainer) renderThreads();
+                    if (msgContainer) renderActiveChat();
+                } else if (state.aiActive && activeChat.aiStatus === 'human' && activeChat.id !== 'chat_1') {
+                    activeChat.aiStatus = 'ai';
+                    updateAIStatusInSupabase(activeChat.id, 'ai');
+                    if (threadContainer) renderThreads();
+                    if (msgContainer) renderActiveChat();
+                }
             }
-        }
-    });
+        });
+    }
     
     // Send message handling
-    sendBtn.addEventListener('click', handleSendMessage);
-    chatInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') handleSendMessage();
-    });
+    if (sendBtn) {
+        sendBtn.addEventListener('click', handleSendMessage);
+    }
+    if (chatInput) {
+        chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSendMessage();
+        });
+    }
     
     function renderThreads() {
+        if (!threadContainer) return;
         threadContainer.innerHTML = '';
         state.chats.forEach(chat => {
             const isActive = chat.id === state.activeChatId;
@@ -613,12 +638,19 @@ function setupInboxModule() {
     }
     
     function renderActiveChat() {
+        if (!msgContainer) return;
         const chat = state.chats.find(c => c.id === state.activeChatId);
         if (!chat) return;
         
         // Header
-        document.getElementById('active-chat-name').textContent = safeLower(chat.name);
-        document.getElementById('active-chat-vehicle').textContent = safeLower(chat.vehicle);
+        const activeChatName = document.getElementById('active-chat-name');
+        if (activeChatName) {
+            activeChatName.textContent = safeLower(chat.name);
+        }
+        const activeChatVehicle = document.getElementById('active-chat-vehicle');
+        if (activeChatVehicle) {
+            activeChatVehicle.textContent = safeLower(chat.vehicle);
+        }
         
         // Render Messages
         msgContainer.innerHTML = '';
@@ -654,6 +686,7 @@ function setupInboxModule() {
     }
     
     function handleSendMessage() {
+        if (!chatInput) return;
         const text = chatInput.value.trim();
         if (!text) return;
         
@@ -675,8 +708,8 @@ function setupInboxModule() {
         chat.lastTime = timeStr;
         chatInput.value = '';
         
-        renderThreads();
-        renderActiveChat();
+        if (threadContainer) renderThreads();
+        if (msgContainer) renderActiveChat();
         
         // Save to Supabase
         saveMessageToSupabase(chat.id, 'consultant', text);
@@ -720,8 +753,8 @@ function setupInboxModule() {
                 triggerAIAutoResponse(chat, replyText);
             }
             
-            renderThreads();
-            renderActiveChat();
+            if (threadContainer) renderThreads();
+            if (msgContainer) renderActiveChat();
         }, 2500);
     }
     
@@ -763,8 +796,8 @@ function setupInboxModule() {
                 playNotificationSound();
             }
             
-            renderThreads();
-            renderActiveChat();
+            if (threadContainer) renderThreads();
+            if (msgContainer) renderActiveChat();
         }, 1500);
     }
     
@@ -853,46 +886,54 @@ function setupHunterModule() {
     }
     
     // Bind slider output display
-    kmSlider.addEventListener('input', (e) => {
-        kmValue.textContent = e.target.value === '120' ? 'sem limite' : `${e.target.value}.000 km`;
-    });
+    if (kmSlider && kmValue) {
+        kmSlider.addEventListener('input', (e) => {
+            kmValue.textContent = e.target.value === '120' ? 'sem limite' : `${e.target.value}.000 km`;
+        });
+    }
     
     // Bind radius slider output display
-    radiusSlider.addEventListener('input', (e) => {
-        radiusValue.textContent = e.target.value === '150' ? 'sem limite' : `${e.target.value} km`;
-    });
+    if (radiusSlider && radiusValue) {
+        radiusSlider.addEventListener('input', (e) => {
+            radiusValue.textContent = e.target.value === '150' ? 'sem limite' : `${e.target.value} km`;
+        });
+    }
     
     // Simulate Hunter crawler Search
-    searchBtn.addEventListener('click', () => {
-        state.hunterSearchLoading = true;
-        
-        // UI feedback states
-        resultsContainer.style.display = 'none';
-        loadingView.style.display = 'flex';
-        searchBtn.disabled = true;
-        searchBtn.innerHTML = 'aguarde...';
-        
-        setTimeout(() => {
-            state.hunterSearchLoading = false;
-            loadingView.style.display = 'none';
-            resultsContainer.style.display = 'flex';
-            searchBtn.disabled = false;
-            searchBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> buscar anúncios`;
+    if (searchBtn) {
+        searchBtn.addEventListener('click', () => {
+            state.hunterSearchLoading = true;
             
-            // Filter Ads
-            renderFilteredAds();
-        }, 1200);
-    });
+            // UI feedback states
+            if (resultsContainer) resultsContainer.style.display = 'none';
+            if (loadingView) loadingView.style.display = 'flex';
+            searchBtn.disabled = true;
+            searchBtn.innerHTML = 'aguarde...';
+            
+            setTimeout(() => {
+                state.hunterSearchLoading = false;
+                if (loadingView) loadingView.style.display = 'none';
+                if (resultsContainer) resultsContainer.style.display = 'flex';
+                searchBtn.disabled = false;
+                searchBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> buscar anúncios`;
+                
+                // Filter Ads
+                renderFilteredAds();
+            }, 1200);
+        });
+    }
     
     // Initial load of ads
     renderFilteredAds();
     
     function renderFilteredAds() {
-        const query = modelInput.value.trim().toLowerCase();
-        const brand = brandSelect.value;
-        const maxKm = parseInt(kmSlider.value) * 1000;
-        const refCity = cityInput.value.trim();
-        const maxRadius = parseInt(radiusSlider.value);
+        if (!resultsContainer) return;
+        
+        const query = modelInput ? modelInput.value.trim().toLowerCase() : '';
+        const brand = brandSelect ? brandSelect.value : 'all';
+        const maxKm = kmSlider ? parseInt(kmSlider.value) * 1000 : 120000;
+        const refCity = cityInput ? cityInput.value.trim() : '';
+        const maxRadius = radiusSlider ? parseInt(radiusSlider.value) : 150;
         
         // Filter elements
         let filtered = state.hunterAds;
@@ -905,12 +946,12 @@ function setupHunterModule() {
             filtered = filtered.filter(ad => safeLower(ad.title).includes(brand));
         }
         
-        if (kmSlider.value !== '120') {
+        if (kmSlider && kmSlider.value !== '120') {
             filtered = filtered.filter(ad => ad.km <= maxKm);
         }
         
         // Filter by Radius from reference City if provided
-        if (refCity && radiusSlider.value !== '150') {
+        if (refCity && radiusSlider && radiusSlider.value !== '150') {
             filtered = filtered.filter(ad => {
                 const dist = getDistance(refCity, ad.location);
                 return dist <= maxRadius;
@@ -994,23 +1035,31 @@ function setupRadarModule() {
     const dashboardView = document.getElementById('radar-dashboard-view');
     const docGenBtn = document.getElementById('btn-generate-doc');
     
-    searchBtn.addEventListener('click', performRadarSearch);
-    searchInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter') performRadarSearch();
-    });
+    if (searchBtn) {
+        searchBtn.addEventListener('click', performRadarSearch);
+    }
+    if (searchInput) {
+        searchInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') performRadarSearch();
+        });
+    }
     
     // Quick search model tag helpers click
     const quickTags = document.querySelectorAll('.quick-search-tag');
-    quickTags.forEach(tag => {
-        tag.addEventListener('click', () => {
-            const query = tag.getAttribute('data-model');
-            searchInput.value = query;
-            performRadarSearch();
+    if (quickTags) {
+        quickTags.forEach(tag => {
+            tag.addEventListener('click', () => {
+                const query = tag.getAttribute('data-model');
+                if (searchInput) {
+                    searchInput.value = query;
+                }
+                performRadarSearch();
+            });
         });
-    });
+    }
     
     function performRadarSearch() {
-        const query = safeLower(searchInput.value.trim());
+        const query = searchInput ? safeLower(searchInput.value.trim()) : '';
         let matchedKey = null;
         
         // Find best match in our static database
@@ -1024,7 +1073,7 @@ function setupRadarModule() {
         
         if (!matchedKey) {
             // Handle not found with a fallback simulated result for demonstration
-            showRadarNotFound(searchInput.value);
+            showRadarNotFound(searchInput ? searchInput.value : '');
             return;
         }
         
@@ -1032,58 +1081,67 @@ function setupRadarModule() {
         state.radarSearchResult = vehicle;
         
         // Toggle view panels
-        defaultPlaceholder.style.display = 'none';
-        dashboardView.style.display = 'grid';
+        if (defaultPlaceholder) defaultPlaceholder.style.display = 'none';
+        if (dashboardView) dashboardView.style.display = 'grid';
         
         // Render values
-        document.getElementById('radar-car-name').textContent = safeLower(vehicle.name);
-        document.getElementById('radar-car-details').textContent = safeLower(vehicle.details);
+        const carNameEl = document.getElementById('radar-car-name');
+        if (carNameEl) carNameEl.textContent = safeLower(vehicle.name);
+        const carDetailsEl = document.getElementById('radar-car-details');
+        if (carDetailsEl) carDetailsEl.textContent = safeLower(vehicle.details);
         
         // Level badge
         const levelBadge = document.getElementById('radar-risk-badge');
-        levelBadge.className = `radar-alert-level level-${vehicle.riskLevel}`;
-        levelBadge.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> ${safeLower(vehicle.riskText)}`;
+        if (levelBadge) {
+            levelBadge.className = `radar-alert-level level-${vehicle.riskLevel}`;
+            levelBadge.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> ${safeLower(vehicle.riskText)}`;
+        }
         
         // Render Chronics Alerts
         const chronicsList = document.getElementById('radar-chronics-list');
-        chronicsList.innerHTML = '';
-        vehicle.chronics.forEach(issue => {
-            const issueBox = document.createElement('div');
-            issueBox.className = 'chronic-issue-box';
-            issueBox.innerHTML = `
-                <div class="chronic-issue-icon">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
-                </div>
-                <div class="chronic-issue-content">
-                    <h4>${safeLower(issue.title)}</h4>
-                    <p>${safeLower(issue.desc)}</p>
-                </div>
-            `;
-            chronicsList.appendChild(issueBox);
-        });
+        if (chronicsList) {
+            chronicsList.innerHTML = '';
+            vehicle.chronics.forEach(issue => {
+                const issueBox = document.createElement('div');
+                issueBox.className = 'chronic-issue-box';
+                issueBox.innerHTML = `
+                    <div class="chronic-issue-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
+                    </div>
+                    <div class="chronic-issue-content">
+                        <h4>${safeLower(issue.title)}</h4>
+                        <p>${safeLower(issue.desc)}</p>
+                    </div>
+                `;
+                chronicsList.appendChild(issueBox);
+            });
+        }
         
         // Render Sentiment Chart Bars
         const sentimentList = document.getElementById('radar-sentiment-list');
-        sentimentList.innerHTML = '';
-        vehicle.sentiment.forEach(stat => {
-            const isNegative = stat.score < 50;
-            const barWrapper = document.createElement('div');
-            barWrapper.className = 'sentiment-bar-wrapper';
-            
-            barWrapper.innerHTML = `
-                <div class="sentiment-bar-header">
-                    <span class="sentiment-bar-label">${safeLower(stat.label)}</span>
-                    <span class="sentiment-bar-percent ${isNegative ? 'neg' : ''}">${stat.score}% positivo</span>
-                </div>
-                <div class="sentiment-bar-track">
-                    <div class="sentiment-bar-fill ${isNegative ? 'neg' : ''}" style="width: ${stat.score}%"></div>
-                </div>
-            `;
-            sentimentList.appendChild(barWrapper);
-        });
+        if (sentimentList) {
+            sentimentList.innerHTML = '';
+            vehicle.sentiment.forEach(stat => {
+                const isNegative = stat.score < 50;
+                const barWrapper = document.createElement('div');
+                barWrapper.className = 'sentiment-bar-wrapper';
+                
+                barWrapper.innerHTML = `
+                    <div class="sentiment-bar-header">
+                        <span class="sentiment-bar-label">${safeLower(stat.label)}</span>
+                        <span class="sentiment-bar-percent ${isNegative ? 'neg' : ''}">${stat.score}% positivo</span>
+                    </div>
+                    <div class="sentiment-bar-track">
+                        <div class="sentiment-bar-fill ${isNegative ? 'neg' : ''}" style="width: ${stat.score}%"></div>
+                    </div>
+                `;
+                sentimentList.appendChild(barWrapper);
+            });
+        }
         
         // Owner quotes
-        document.getElementById('radar-owner-comment').textContent = safeLower(vehicle.quote);
+        const ownerCommentEl = document.getElementById('radar-owner-comment');
+        if (ownerCommentEl) ownerCommentEl.textContent = safeLower(vehicle.quote);
         
         // Render Checklist
         renderChecklist(vehicle.checklist);
@@ -1091,6 +1149,7 @@ function setupRadarModule() {
     
     function renderChecklist(checklistItems) {
         const checkContainer = document.getElementById('radar-checklist-container');
+        if (!checkContainer) return;
         checkContainer.innerHTML = '';
         
         checklistItems.forEach((item, idx) => {
@@ -1110,7 +1169,6 @@ function setupRadarModule() {
             
             checkCard.addEventListener('click', () => {
                 checkCard.classList.toggle('checked');
-                // Trigger brief feedback vibration or click feel if supported
             });
             
             checkContainer.appendChild(checkCard);
@@ -1118,43 +1176,52 @@ function setupRadarModule() {
     }
     
     function showRadarNotFound(modelName) {
-        defaultPlaceholder.style.display = 'none';
-        dashboardView.style.display = 'grid';
+        if (defaultPlaceholder) defaultPlaceholder.style.display = 'none';
+        if (dashboardView) dashboardView.style.display = 'grid';
         
-        document.getElementById('radar-car-name').textContent = safeLower(modelName);
-        document.getElementById('radar-car-details').textContent = 'modelo avaliado via motor de análise lume.';
+        const carNameEl = document.getElementById('radar-car-name');
+        if (carNameEl) carNameEl.textContent = safeLower(modelName);
+        const carDetailsEl = document.getElementById('radar-car-details');
+        if (carDetailsEl) carDetailsEl.textContent = 'modelo avaliado via motor de análise lume.';
         
         const levelBadge = document.getElementById('radar-risk-badge');
-        levelBadge.className = 'radar-alert-level level-yellow';
-        levelBadge.innerHTML = '🔍 mapeamento provisório';
+        if (levelBadge) {
+            levelBadge.className = 'radar-alert-level level-yellow';
+            levelBadge.innerHTML = '🔍 mapeamento provisório';
+        }
         
         const chronicsList = document.getElementById('radar-chronics-list');
-        chronicsList.innerHTML = `
-            <div class="chronic-issue-box" style="border-left-color:var(--accent-amber);">
-                <div class="chronic-issue-icon" style="background:rgba(234,179,8,0.08);">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="stroke:var(--accent-amber);"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+        if (chronicsList) {
+            chronicsList.innerHTML = `
+                <div class="chronic-issue-box" style="border-left-color:var(--accent-amber);">
+                    <div class="chronic-issue-icon" style="background:rgba(234,179,8,0.08);">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="stroke:var(--accent-amber);"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                    <div class="chronic-issue-content">
+                        <h4>nenhum alerta crítico consolidado</h4>
+                        <p>este veículo não possui histórico grave de recalls estruturais ou defeitos de projeto mapeados em larga escala. recomendamos seguir a inspeção de rotina.</p>
+                    </div>
                 </div>
-                <div class="chronic-issue-content">
-                    <h4>nenhum alerta crítico consolidado</h4>
-                    <p>este veículo não possui histórico grave de recalls estruturais ou defeitos de projeto mapeados em larga escala. recomendamos seguir a inspeção de rotina.</p>
-                </div>
-            </div>
-        `;
+            `;
+        }
         
         const sentimentList = document.getElementById('radar-sentiment-list');
-        sentimentList.innerHTML = `
-            <div class="sentiment-bar-wrapper">
-                <div class="sentiment-bar-header">
-                    <span class="sentiment-bar-label">satisfação geral dos donos</span>
-                    <span class="sentiment-bar-percent">82% positivo</span>
+        if (sentimentList) {
+            sentimentList.innerHTML = `
+                <div class="sentiment-bar-wrapper">
+                    <div class="sentiment-bar-header">
+                        <span class="sentiment-bar-label">satisfação geral dos donos</span>
+                        <span class="sentiment-bar-percent">82% positivo</span>
+                    </div>
+                    <div class="sentiment-bar-track">
+                        <div class="sentiment-bar-fill" style="width: 82%"></div>
+                    </div>
                 </div>
-                <div class="sentiment-bar-track">
-                    <div class="sentiment-bar-fill" style="width: 82%"></div>
-                </div>
-            </div>
-        `;
+            `;
+        }
         
-        document.getElementById('radar-owner-comment').textContent = '"excelente dirigibilidade, peças de reposição fáceis de achar no mercado alternativo e ótimo consumo urbano." (média ponderada de comentários de donos - simulação lume ai)';
+        const ownerCommentEl = document.getElementById('radar-owner-comment');
+        if (ownerCommentEl) ownerCommentEl.textContent = '"excelente dirigibilidade, peças de reposição fáceis de achar no mercado alternativo e ótimo consumo urbano." (média ponderada de comentários de donos - simulação lume ai)';
         
         // Standard Checklist fallback
         const defaultChecklist = [
@@ -1167,24 +1234,31 @@ function setupRadarModule() {
     }
     
     // Generate Report Action Button Click
-    docGenBtn.addEventListener('click', () => {
-        // Find checked items
-        const checkedItems = document.querySelectorAll('.checklist-item.checked');
-        const totalItems = document.querySelectorAll('.checklist-item');
-        
-        const vehicleModel = document.getElementById('radar-car-name').textContent;
-        const riskLevel = state.radarSearchResult ? state.radarSearchResult.riskLevel : 'yellow';
-        const checkedTitles = Array.from(checkedItems).map(item => item.querySelector('h5').textContent);
-        const checklistState = { checked: checkedTitles };
-        const notes = document.getElementById('radar-owner-comment').textContent;
-        
-        saveInspectionReportToSupabase(vehicleModel, riskLevel, checklistState, notes);
-        
-        let reportDetails = `dossiê lume gerado para o veículo ${vehicleModel}.\n`;
-        reportDetails += `itens inspecionados com sucesso: ${checkedItems.length} de ${totalItems.length}.\n`;
-        
-        alert(`🎉 dossiê digital "lume" gerado com sucesso!\n\num link de acesso web contendo a análise completa de problemas crônicos e o laudo cautelar da inspeção física foi gerado e está pronto para ser enviado via whatsapp para o seu cliente!`);
-        
-        console.log(reportDetails);
-    });
+    if (docGenBtn) {
+        docGenBtn.addEventListener('click', () => {
+            // Find checked items
+            const checkedItems = document.querySelectorAll('.checklist-item.checked');
+            const totalItems = document.querySelectorAll('.checklist-item');
+            
+            const carNameEl = document.getElementById('radar-car-name');
+            const vehicleModel = carNameEl ? carNameEl.textContent : '';
+            const riskLevel = state.radarSearchResult ? state.radarSearchResult.riskLevel : 'yellow';
+            const checkedTitles = Array.from(checkedItems).map(item => {
+                const h5 = item.querySelector('h5');
+                return h5 ? h5.textContent : '';
+            });
+            const checklistState = { checked: checkedTitles };
+            const ownerCommentEl = document.getElementById('radar-owner-comment');
+            const notes = ownerCommentEl ? ownerCommentEl.textContent : '';
+            
+            saveInspectionReportToSupabase(vehicleModel, riskLevel, checklistState, notes);
+            
+            let reportDetails = `dossiê lume gerado para o veículo ${vehicleModel}.\n`;
+            reportDetails += `itens inspecionados com sucesso: ${checkedItems.length} de ${totalItems.length}.\n`;
+            
+            alert(`🎉 dossiê digital "lume" gerado com sucesso!\n\num link de acesso web contendo a análise completa de problemas crônicos e o laudo cautelar da inspeção física foi gerado e está pronto para ser enviado via whatsapp para o seu cliente!`);
+            
+            console.log(reportDetails);
+        });
+    }
 }
