@@ -446,10 +446,10 @@ function setupNavigation() {
     const headerSub = document.querySelector('.header-title p');
     
     const titles = {
-        dashboard: { main: 'Painel Geral', sub: 'Métricas agregadas e status operacional da inteligência Lume' },
-        inbox: { main: 'Central Lume', sub: 'Inbox unificada omnichannel com triagem assistida por IA' },
-        hunter: { main: 'Caçador Lume', sub: 'Smart Aggregator de anúncios Webmotors, OLX e redes sociais' },
-        radar: { main: 'Radar de Crônicos', sub: 'Análise de sentimento de proprietários e histórico de falhas de mercado' }
+        dashboard: { main: 'visão geral', sub: 'monitoramento em tempo real da inteligência lume' },
+        inbox: { main: 'conversas', sub: 'inbox omnichannel com triagem assistida por ia' },
+        hunter: { main: 'garimpo', sub: 'agregador inteligente de ofertas olx, webmotors e marketplace' },
+        radar: { main: 'radar de crônicos', sub: 'dossiê técnico de falhas conhecidas e opinião de donos' }
     };
     
     navItems.forEach(item => {
@@ -498,26 +498,26 @@ function updateDashboardSummary() {
                 <div class="activity-item">
                     <div class="activity-marker human"></div>
                     <div class="activity-content">
-                        <span class="activity-title">Lead Carlos Albuquerque escalado</span>
-                        <span class="activity-desc">Proposta de troca acionou filtro humano na Central</span>
+                        <span class="activity-title">lead carlos albuquerque escalado</span>
+                        <span class="activity-desc">proposta de troca acionou filtro humano na central</span>
                     </div>
-                    <span class="status-pill human">Humano</span>
+                    <span class="status-pill human">humano</span>
                 </div>
                 <div class="activity-item">
                     <div class="activity-marker ai"></div>
                     <div class="activity-content">
-                        <span class="activity-title">Lume AI atendeu Mariana Costa</span>
-                        <span class="activity-desc">Perguntas sobre quilometragem respondidas por dados</span>
+                        <span class="activity-title">lume ai atendeu mariana costa</span>
+                        <span class="activity-desc">perguntas sobre quilometragem respondidas por dados</span>
                     </div>
-                    <span class="status-pill ai">IA</span>
+                    <span class="status-pill ai">ia</span>
                 </div>
                 <div class="activity-item">
                     <div class="activity-marker hunter"></div>
                     <div class="activity-content">
-                        <span class="activity-title">Caçador consolidou 5 novos carros</span>
-                        <span class="activity-desc">Filtros de busca atualizados para Jetta/Civic/Compass</span>
+                        <span class="activity-title">garimpo consolidou 5 novos carros</span>
+                        <span class="activity-desc">filtros de busca atualizados para jetta/civic/compass</span>
                     </div>
-                    <span style="font-size:0.75rem; color:var(--accent-solid); font-weight:600;">Caçador</span>
+                    <span style="font-size:0.75rem; color:var(--accent-solid); font-weight:300; text-transform:lowercase;">garimpo</span>
                 </div>
             </div>
         `;
@@ -579,19 +579,19 @@ function setupInboxModule() {
             
             threadItem.innerHTML = `
                 <div class="chat-avatar-wrapper">
-                    <div class="chat-avatar">${chat.avatarText}</div>
+                    <div class="chat-avatar">${chat.avatarText.toLowerCase()}</div>
                     <div class="channel-badge ${chat.channel}">
                         ${getChannelIconSvg(chat.channel)}
                     </div>
                 </div>
                 <div class="chat-thread-info">
                     <div class="chat-thread-header">
-                        <span class="chat-name">${chat.name}</span>
-                        <span class="chat-time">${chat.lastTime}</span>
+                        <span class="chat-name">${chat.name.toLowerCase()}</span>
+                        <span class="chat-time">${chat.lastTime.toLowerCase()}</span>
                     </div>
-                    <div class="chat-last-message">${chat.lastMessage}</div>
+                    <div class="chat-last-message">${chat.lastMessage.toLowerCase()}</div>
                     <div class="chat-status-indicators">
-                        <span class="status-pill ${chat.aiStatus}">${chat.aiStatus === 'ai' ? 'Lume AI Ativo' : 'Atenção Humana'}</span>
+                        <span class="status-pill ${chat.aiStatus}">${chat.aiStatus === 'ai' ? 'lume ai ativo' : 'atenção humana'}</span>
                     </div>
                 </div>
             `;
@@ -611,8 +611,8 @@ function setupInboxModule() {
         if (!chat) return;
         
         // Header
-        document.getElementById('active-chat-name').textContent = chat.name;
-        document.getElementById('active-chat-vehicle').textContent = chat.vehicle;
+        document.getElementById('active-chat-name').textContent = chat.name.toLowerCase();
+        document.getElementById('active-chat-vehicle').textContent = chat.vehicle.toLowerCase();
         
         // Render Messages
         msgContainer.innerHTML = '';
@@ -623,10 +623,10 @@ function setupInboxModule() {
             msgWrapper.className = `msg-wrapper ${isSent ? 'sent' : 'received'}`;
             
             msgWrapper.innerHTML = `
-                <div class="msg-bubble">${msg.text}</div>
+                <div class="msg-bubble">${msg.text.toLowerCase()}</div>
                 <div class="msg-meta">
-                    ${msg.time}
-                    ${msg.isAI ? '<span class="msg-agent-tag">Lume AI</span>' : ''}
+                    ${msg.time.toLowerCase()}
+                    ${msg.isAI ? '<span class="msg-agent-tag">lume ai</span>' : ''}
                 </div>
             `;
             
@@ -637,7 +637,7 @@ function setupInboxModule() {
         if (chat.aiStatus === 'human' && chat.id === 'chat_1') {
             const warningBubble = document.createElement('div');
             warningBubble.className = 'system-alert-bubble';
-            warningBubble.innerHTML = '⚠️ <strong>Lume AI emitiu alerta:</strong> Cliente propôs troca de veículo ("Gol 2018"). Resposta automática pausada. Assuma a negociação abaixo.';
+            warningBubble.innerHTML = '⚠️ <strong>alerta da inteligência lume:</strong> cliente propôs troca de veículo ("gol 2018"). resposta automática pausada. assuma a negociação abaixo.';
             msgContainer.appendChild(warningBubble);
         }
         
@@ -846,12 +846,12 @@ function setupHunterModule() {
     
     // Bind slider output display
     kmSlider.addEventListener('input', (e) => {
-        kmValue.textContent = e.target.value === '120' ? 'Sem Limite' : `${e.target.value}.000 km`;
+        kmValue.textContent = e.target.value === '120' ? 'sem limite' : `${e.target.value}.000 km`;
     });
     
     // Bind radius slider output display
     radiusSlider.addEventListener('input', (e) => {
-        radiusValue.textContent = e.target.value === '150' ? 'Sem Limite' : `${e.target.value} km`;
+        radiusValue.textContent = e.target.value === '150' ? 'sem limite' : `${e.target.value} km`;
     });
     
     // Simulate Hunter crawler Search
@@ -862,14 +862,14 @@ function setupHunterModule() {
         resultsContainer.style.display = 'none';
         loadingView.style.display = 'flex';
         searchBtn.disabled = true;
-        searchBtn.innerHTML = 'Aguarde...';
+        searchBtn.innerHTML = 'aguarde...';
         
         setTimeout(() => {
             state.hunterSearchLoading = false;
             loadingView.style.display = 'none';
             resultsContainer.style.display = 'flex';
             searchBtn.disabled = false;
-            searchBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> Buscar Anúncios`;
+            searchBtn.innerHTML = `<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg> buscar anúncios`;
             
             // Filter Ads
             renderFilteredAds();
@@ -915,8 +915,8 @@ function setupHunterModule() {
             resultsContainer.innerHTML = `
                 <div class="card" style="text-align:center; padding:3rem; color:#71717a;">
                     <svg width="48" height="48" style="stroke:#71717a; margin-bottom:1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
-                    <p style="font-size:1rem; font-weight:600; color:#fff; margin-bottom:0.3rem;">Nenhum carro encontrado</p>
-                    <p style="font-size:0.85rem;">Tente ajustar as faixas de raio, quilometragem ou limpar os filtros de busca.</p>
+                    <p style="font-size:1rem; font-weight:600; color:#fff; margin-bottom:0.3rem;">nenhum carro encontrado</p>
+                    <p style="font-size:0.85rem;">tente ajustar as faixas de raio, quilometragem ou limpar os filtros de busca.</p>
                 </div>
             `;
             return;
@@ -932,7 +932,7 @@ function setupHunterModule() {
             
             adCard.innerHTML = `
                 <div class="car-image-placeholder">
-                    <span class="car-source-badge ${ad.source}">${ad.source.toUpperCase()}</span>
+                    <span class="car-source-badge ${ad.source}">${ad.source.toLowerCase()}</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3C13 6.8 11.5 6 10 6H4c-1.1 0-2 .9-2 2v8c0 .6.4 1 1 1h2m10 0a3 3 0 1 1-6 0m6 0a3 3 0 1 0-6 0m11 0a3 3 0 1 1-6 0m6 0a3 3 0 1 0-6 0"/>
                     </svg>
@@ -940,32 +940,32 @@ function setupHunterModule() {
                 <div class="car-details-panel">
                     <div class="car-header">
                         <div class="car-title-wrapper">
-                            <h3>${ad.title}</h3>
-                            <div class="car-version">${ad.version}</div>
+                            <h3>${ad.title.toLowerCase()}</h3>
+                            <div class="car-version">${ad.version.toLowerCase()}</div>
                         </div>
-                        <div class="car-price-badge">R$ ${ad.price.toLocaleString('pt-BR')}</div>
+                        <div class="car-price-badge">r$ ${ad.price.toLocaleString('pt-BR')}</div>
                     </div>
                     
                     <div class="car-meta-grid">
                         <div class="car-meta-item">
-                            <span class="label">Ano</span>
+                            <span class="label">ano</span>
                             <span class="value">${ad.year}/${ad.year}</span>
                         </div>
                         <div class="car-meta-item">
-                            <span class="label">Quilometragem</span>
+                            <span class="label">quilometragem</span>
                             <span class="value">${ad.km.toLocaleString('pt-BR')} km</span>
                         </div>
                         <div class="car-meta-item">
-                            <span class="label">Localização</span>
-                            <span class="value">${ad.location} <strong style="color:var(--accent-solid); font-weight:600; font-size:0.75rem; margin-left:0.2rem;">${distanceText}</strong></span>
+                            <span class="label">localização</span>
+                            <span class="value">${ad.location.toLowerCase()} <strong style="color:var(--accent-solid); font-weight:600; font-size:0.75rem; margin-left:0.2rem;">${distanceText.toLowerCase()}</strong></span>
                         </div>
                     </div>
                     
-                    <span class="car-analysis-tag">${ad.analysis}</span>
+                    <span class="car-analysis-tag">${ad.analysis.toLowerCase()}</span>
                     
                     <div class="car-actions-wrapper">
                         <a href="${ad.url}" target="_blank" class="btn-secondary" style="padding:0.5rem 1rem; font-size:0.8rem; text-decoration:none;">
-                            Ver Original <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-left:0.2rem;"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            ver original <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" style="margin-left:0.2rem;"><path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                         </a>
                     </div>
                 </div>
@@ -1028,13 +1028,13 @@ function setupRadarModule() {
         dashboardView.style.display = 'grid';
         
         // Render values
-        document.getElementById('radar-car-name').textContent = vehicle.name;
-        document.getElementById('radar-car-details').textContent = vehicle.details;
+        document.getElementById('radar-car-name').textContent = vehicle.name.toLowerCase();
+        document.getElementById('radar-car-details').textContent = vehicle.details.toLowerCase();
         
         // Level badge
         const levelBadge = document.getElementById('radar-risk-badge');
         levelBadge.className = `radar-alert-level level-${vehicle.riskLevel}`;
-        levelBadge.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> ${vehicle.riskText}`;
+        levelBadge.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> ${vehicle.riskText.toLowerCase()}`;
         
         // Render Chronics Alerts
         const chronicsList = document.getElementById('radar-chronics-list');
@@ -1047,8 +1047,8 @@ function setupRadarModule() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
                 </div>
                 <div class="chronic-issue-content">
-                    <h4>${issue.title}</h4>
-                    <p>${issue.desc}</p>
+                    <h4>${issue.title.toLowerCase()}</h4>
+                    <p>${issue.desc.toLowerCase()}</p>
                 </div>
             `;
             chronicsList.appendChild(issueBox);
@@ -1064,8 +1064,8 @@ function setupRadarModule() {
             
             barWrapper.innerHTML = `
                 <div class="sentiment-bar-header">
-                    <span class="sentiment-bar-label">${stat.label}</span>
-                    <span class="sentiment-bar-percent ${isNegative ? 'neg' : ''}">${stat.score}% Positivo</span>
+                    <span class="sentiment-bar-label">${stat.label.toLowerCase()}</span>
+                    <span class="sentiment-bar-percent ${isNegative ? 'neg' : ''}">${stat.score}% positivo</span>
                 </div>
                 <div class="sentiment-bar-track">
                     <div class="sentiment-bar-fill ${isNegative ? 'neg' : ''}" style="width: ${stat.score}%"></div>
@@ -1075,7 +1075,7 @@ function setupRadarModule() {
         });
         
         // Owner quotes
-        document.getElementById('radar-owner-comment').textContent = vehicle.quote;
+        document.getElementById('radar-owner-comment').textContent = vehicle.quote.toLowerCase();
         
         // Render Checklist
         renderChecklist(vehicle.checklist);
@@ -1095,8 +1095,8 @@ function setupRadarModule() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>
                 <div class="checklist-item-content">
-                    <h5>${item.title}</h5>
-                    <p>${item.desc}</p>
+                    <h5>${item.title.toLowerCase()}</h5>
+                    <p>${item.desc.toLowerCase()}</p>
                 </div>
             `;
             
@@ -1113,12 +1113,12 @@ function setupRadarModule() {
         defaultPlaceholder.style.display = 'none';
         dashboardView.style.display = 'grid';
         
-        document.getElementById('radar-car-name').textContent = modelName.toUpperCase();
-        document.getElementById('radar-car-details').textContent = 'Modelo avaliado via motor de análise Lume.';
+        document.getElementById('radar-car-name').textContent = modelName.toLowerCase();
+        document.getElementById('radar-car-details').textContent = 'modelo avaliado via motor de análise lume.';
         
         const levelBadge = document.getElementById('radar-risk-badge');
         levelBadge.className = 'radar-alert-level level-yellow';
-        levelBadge.innerHTML = '🔍 Mapeamento Provisório';
+        levelBadge.innerHTML = '🔍 mapeamento provisório';
         
         const chronicsList = document.getElementById('radar-chronics-list');
         chronicsList.innerHTML = `
@@ -1127,8 +1127,8 @@ function setupRadarModule() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="stroke:var(--accent-amber);"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
                 </div>
                 <div class="chronic-issue-content">
-                    <h4>Nenhum Alerta Crítico Consolidado</h4>
-                    <p>Este veículo não possui histórico grave de recalls estruturais ou defeitos de projeto mapeados em larga escala. Recomendamos seguir a inspeção de rotina.</p>
+                    <h4>nenhum alerta crítico consolidado</h4>
+                    <p>este veículo não possui histórico grave de recalls estruturais ou defeitos de projeto mapeados em larga escala. recomendamos seguir a inspeção de rotina.</p>
                 </div>
             </div>
         `;
@@ -1137,8 +1137,8 @@ function setupRadarModule() {
         sentimentList.innerHTML = `
             <div class="sentiment-bar-wrapper">
                 <div class="sentiment-bar-header">
-                    <span class="sentiment-bar-label">Satisfação Geral dos Donos</span>
-                    <span class="sentiment-bar-percent">82% Positivo</span>
+                    <span class="sentiment-bar-label">satisfação geral dos donos</span>
+                    <span class="sentiment-bar-percent">82% positivo</span>
                 </div>
                 <div class="sentiment-bar-track">
                     <div class="sentiment-bar-fill" style="width: 82%"></div>
@@ -1146,13 +1146,13 @@ function setupRadarModule() {
             </div>
         `;
         
-        document.getElementById('radar-owner-comment').textContent = '"Excelente dirigibilidade, peças de reposição fáceis de achar no mercado alternativo e ótimo consumo urbano." (Média ponderada de comentários de donos - Simulação Lume AI)';
+        document.getElementById('radar-owner-comment').textContent = '"excelente dirigibilidade, peças de reposição fáceis de achar no mercado alternativo e ótimo consumo urbano." (média ponderada de comentários de donos - simulação lume ai)';
         
         // Standard Checklist fallback
         const defaultChecklist = [
-            { title: 'Laudo Cautelar & Pintura', desc: 'Passar o medidor de espessura de tinta em colunas, capô e teto para detectar repinturas ou massas plásticas.' },
-            { title: 'Arrefecimento & Óleo', desc: 'Verificar se o nível de aditivo está correto e inspecionar a tampa do motor para detectar borra de óleo.' },
-            { title: 'Suspensão & Buchas', desc: 'Procurar por vazamento nos amortecedores dianteiros e rasgos nas coifas homocinéticas.' }
+            { title: 'laudo cautelar & pintura', desc: 'passar o medidor de espessura de tinta em colunas, capô e teto para detectar repinturas ou massas plásticas.' },
+            { title: 'arrefecimento & óleo', desc: 'verificar se o nível de aditivo está correto e inspecionar a tampa do motor para detectar borra de óleo.' },
+            { title: 'suspensão & buchas', desc: 'procurar por vazamento nos amortecedores dianteiros e rasgos nas coifas homocinéticas.' }
         ];
         
         renderChecklist(defaultChecklist);
@@ -1172,10 +1172,10 @@ function setupRadarModule() {
         
         saveInspectionReportToSupabase(vehicleModel, riskLevel, checklistState, notes);
         
-        let reportDetails = `Dossiê Lume gerado para o veículo ${vehicleModel}.\n`;
-        reportDetails += `Itens inspecionados com sucesso: ${checkedItems.length} de ${totalItems.length}.\n`;
+        let reportDetails = `dossiê lume gerado para o veículo ${vehicleModel}.\n`;
+        reportDetails += `itens inspecionados com sucesso: ${checkedItems.length} de ${totalItems.length}.\n`;
         
-        alert(`🎉 Dossiê Digital "Lume" Gerado com Sucesso!\n\nUm link de acesso web contendo a análise completa de problemas crônicos e o laudo cautelar da inspeção física foi gerado e está pronto para ser enviado via WhatsApp para o seu cliente!`);
+        alert(`🎉 dossiê digital "lume" gerado com sucesso!\n\num link de acesso web contendo a análise completa de problemas crônicos e o laudo cautelar da inspeção física foi gerado e está pronto para ser enviado via whatsapp para o seu cliente!`);
         
         console.log(reportDetails);
     });
