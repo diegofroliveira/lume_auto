@@ -16,6 +16,7 @@ const state = {
     aiActive: true,
     radarSearchResult: null,
     hunterSearchLoading: false,
+    inboxInitialized: false,
     
     // Core Databases
     chats: [
@@ -420,12 +421,22 @@ async function saveInspectionReportToSupabase(vehicleModel, riskLevel, checklist
 // APPLICATION INITIALIZATION & NAVIGATION
 // ==========================================================================
 function initApp() {
-    setupNavigation();
-    setupInboxModule();
-    setupHunterModule();
-    setupRadarModule();
-    updateDashboardSummary();
-    checkSupabaseConnection();
+    const modules = [
+        { name: 'Navegação', fn: setupNavigation },
+        { name: 'Central de Leads (Inbox)', fn: setupInboxModule },
+        { name: 'Caçador de Anúncios', fn: setupHunterModule },
+        { name: 'Radar de Crônicos', fn: setupRadarModule },
+        { name: 'Sumário do Dashboard', fn: updateDashboardSummary },
+        { name: 'Supabase Handshake', fn: checkSupabaseConnection }
+    ];
+    
+    modules.forEach(mod => {
+        try {
+            mod.fn();
+        } catch (e) {
+            console.error(`[Lume Engine] Falha ao inicializar o módulo "${mod.name}":`, e);
+        }
+    });
 }
 
 function setupNavigation() {
@@ -483,26 +494,31 @@ function updateDashboardSummary() {
     const logList = document.getElementById('recent-activity-list');
     if (logList) {
         logList.innerHTML = `
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding: 0.8rem 0;">
-                <div>
-                    <p style="font-weight:600; font-size:0.85rem; color:#fff;">Lead Carlos Albuquerque escalado</p>
-                    <p style="font-size:0.75rem; color:#71717a;">Proposta de troca acionou filtro humano na Central</p>
+            <div class="activity-timeline">
+                <div class="activity-item">
+                    <div class="activity-marker human"></div>
+                    <div class="activity-content">
+                        <span class="activity-title">Lead Carlos Albuquerque escalado</span>
+                        <span class="activity-desc">Proposta de troca acionou filtro humano na Central</span>
+                    </div>
+                    <span class="status-pill human">Humano</span>
                 </div>
-                <span class="status-pill human">Humano</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border-color); padding: 0.8rem 0;">
-                <div>
-                    <p style="font-weight:600; font-size:0.85rem; color:#fff;">Lume AI atendeu Mariana Costa</p>
-                    <p style="font-size:0.75rem; color:#71717a;">Perguntas sobre quilometragem respondidas por dados</p>
+                <div class="activity-item">
+                    <div class="activity-marker ai"></div>
+                    <div class="activity-content">
+                        <span class="activity-title">Lume AI atendeu Mariana Costa</span>
+                        <span class="activity-desc">Perguntas sobre quilometragem respondidas por dados</span>
+                    </div>
+                    <span class="status-pill ai">IA</span>
                 </div>
-                <span class="status-pill ai">IA</span>
-            </div>
-            <div style="display:flex; justify-content:space-between; align-items:center; padding: 0.8rem 0 0 0;">
-                <div>
-                    <p style="font-weight:600; font-size:0.85rem; color:#fff;">Caçador consolidou 5 novos carros</p>
-                    <p style="font-size:0.75rem; color:#71717a;">Filtros de busca atualizados para Jetta/Civic/Compass</p>
+                <div class="activity-item">
+                    <div class="activity-marker hunter"></div>
+                    <div class="activity-content">
+                        <span class="activity-title">Caçador consolidou 5 novos carros</span>
+                        <span class="activity-desc">Filtros de busca atualizados para Jetta/Civic/Compass</span>
+                    </div>
+                    <span style="font-size:0.75rem; color:var(--accent-solid); font-weight:600;">Caçador</span>
                 </div>
-                <span style="font-size:0.75rem; color:var(--accent-solid); font-weight:600;">Caçador</span>
             </div>
         `;
     }
@@ -521,6 +537,9 @@ function setupInboxModule() {
     // Render list of threads
     renderThreads();
     renderActiveChat();
+    
+    if (state.inboxInitialized) return;
+    state.inboxInitialized = true;
     
     // Toggle AI Button click
     aiToggle.addEventListener('click', () => {

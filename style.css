@@ -3,15 +3,15 @@
    Steve Jobs' Philosophy: Simplicity, Humanism, and Craftsmanship
    ========================================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Outfit:wght@300;400;500;600;700;800&display=swap');
 
 :root {
     /* Color Palette - Lume Glow */
-    --bg-main: #040406;
-    --bg-sidebar: #0a0a0c;
-    --bg-surface: rgba(18, 18, 22, 0.45);
-    --bg-surface-active: rgba(28, 28, 34, 0.7);
-    --border-color: rgba(255, 255, 255, 0.04);
+    --bg-main: #000000;
+    --bg-sidebar: #040406;
+    --bg-surface: rgba(10, 10, 12, 0.45);
+    --bg-surface-active: rgba(255, 255, 255, 0.035);
+    --border-color: rgba(255, 255, 255, 0.055);
     --border-color-glow: rgba(255, 85, 0, 0.25);
     
     /* Brand Accents */
@@ -27,13 +27,13 @@
     
     /* Typography */
     --font-heading: 'Outfit', sans-serif;
-    --font-body: 'Plus Jakarta Sans', sans-serif;
+    --font-body: 'Inter', sans-serif;
     
     /* Effects */
-    --glass-blur: blur(20px);
-    --glow-shadow: 0 0 25px rgba(255, 85, 0, 0.08);
-    --glow-shadow-intense: 0 0 40px rgba(255, 85, 0, 0.18);
-    --transition-smooth: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    --glass-blur: blur(24px);
+    --glow-shadow: 0 4px 20px rgba(255, 85, 0, 0.06);
+    --glow-shadow-intense: 0 8px 30px rgba(255, 85, 0, 0.15);
+    --transition-smooth: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 /* Base Reset & Styling */
@@ -122,50 +122,56 @@ aside {
 
 .logo-icon {
     position: relative;
-    width: 40px;
-    height: 40px;
-    background: var(--accent-glow);
-    border-radius: 10px;
+    width: 42px;
+    height: 42px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
     display: flex;
     align-items: center;
     justify-content: center;
-    box-shadow: var(--glow-shadow);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3), inset 0 2px 4px rgba(255, 255, 255, 0.05);
+    transition: var(--transition-smooth);
 }
 
-.logo-icon::before {
-    content: '';
-    position: absolute;
-    inset: 1px;
-    background: #040406;
-    border-radius: 9px;
-    z-index: 1;
+.logo-icon:hover {
+    border-color: rgba(255, 85, 0, 0.35);
+    border-top-color: rgba(255, 85, 0, 0.6);
+    box-shadow: 0 4px 20px rgba(255, 85, 0, 0.15);
 }
 
 .logo-icon svg {
     z-index: 2;
-    width: 20px;
-    height: 20px;
+    width: 22px;
+    height: 22px;
     fill: none;
     stroke: url(#lumeGradient);
 }
 
+.logo-text-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+}
+
 .logo-text {
     font-family: var(--font-heading);
-    font-size: 1.55rem;
-    font-weight: 700;
-    letter-spacing: -0.8px;
+    font-size: 1.4rem;
+    font-weight: 800;
+    letter-spacing: 2px;
     background: linear-gradient(135deg, #ffffff 40%, #a1a1aa 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 
 .logo-tag {
-    font-size: 0.65rem;
+    font-size: 0.55rem;
     text-transform: uppercase;
-    letter-spacing: 2.5px;
+    letter-spacing: 3.5px;
     color: var(--accent-solid);
-    font-weight: 600;
-    margin-top: -3px;
+    font-weight: 700;
+    margin-top: -1px;
     display: block;
 }
 
@@ -200,28 +206,28 @@ nav {
 
 .nav-item:hover {
     color: #ffffff;
-    background-color: rgba(255, 255, 255, 0.03);
+    background-color: rgba(255, 255, 255, 0.025);
 }
 
 .nav-item.active {
     color: #ffffff;
-    background-color: var(--bg-surface-active);
+    background-color: rgba(255, 255, 255, 0.035);
     border: 1px solid rgba(255, 255, 255, 0.04);
-    border-top: 1px solid rgba(255, 255, 255, 0.1);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
     position: relative;
 }
 
 .nav-item.active::before {
     content: '';
     position: absolute;
-    left: 2px;
-    top: 25%;
-    bottom: 25%;
+    left: 0;
+    top: 20%;
+    bottom: 20%;
     width: 3px;
     background: var(--accent-solid);
-    border-radius: 4px;
-    box-shadow: 0 0 10px var(--accent-solid);
+    border-radius: 0 4px 4px 0;
+    box-shadow: 0 0 12px var(--accent-solid);
 }
 
 .nav-item.active svg {
@@ -468,19 +474,16 @@ header {
 }
 
 .kpi-icon {
-    width: 32px;
-    height: 32px;
-    border-radius: 8px;
-    background: rgba(255, 255, 255, 0.03);
-    border: 1px solid rgba(255, 255, 255, 0.05);
     display: flex;
     align-items: center;
     justify-content: center;
+    transition: var(--transition-smooth);
 }
 
 .kpi-icon svg {
-    width: 16px;
-    height: 16px;
+    width: 20px;
+    height: 20px;
+    filter: drop-shadow(0 0 6px currentColor);
 }
 
 .kpi-value {
@@ -1653,3 +1656,82 @@ header {
         height: auto;
     }
 }
+
+/* Recent Activity Timeline */
+.activity-timeline {
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    padding-left: 1.5rem;
+    margin-top: 0.5rem;
+}
+
+.activity-timeline::before {
+    content: '';
+    position: absolute;
+    left: 4px;
+    top: 6px;
+    bottom: 6px;
+    width: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+.activity-item {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.activity-item:last-child {
+    border-bottom: none;
+    padding-bottom: 0;
+}
+
+.activity-marker {
+    position: absolute;
+    left: -1.5rem;
+    top: 1.35rem;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: #52525b;
+    border: 2px solid #000000;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.05);
+    z-index: 2;
+}
+
+.activity-marker.human {
+    background: var(--state-danger);
+    box-shadow: 0 0 10px var(--state-danger);
+}
+
+.activity-marker.ai {
+    background: var(--state-success);
+    box-shadow: 0 0 10px var(--state-success);
+}
+
+.activity-marker.hunter {
+    background: var(--accent-solid);
+    box-shadow: 0 0 10px var(--accent-solid);
+}
+
+.activity-content {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+}
+
+.activity-title {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.activity-desc {
+    font-size: 0.78rem;
+    color: #71717a;
+}
+
