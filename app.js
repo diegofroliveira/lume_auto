@@ -583,9 +583,58 @@ function setupHunterModule() {
     const kmSlider = document.getElementById('hunter-km-slider');
     const kmValue = document.getElementById('hunter-km-value');
     
+    // New controls for City and Radius
+    const cityInput = document.getElementById('hunter-city-input');
+    const radiusSlider = document.getElementById('hunter-radius-slider');
+    const radiusValue = document.getElementById('hunter-radius-value');
+    
+    // Distance calculation logic for realistic simulation
+    const distanceMatrix = {
+        'sao paulo': { 'são paulo': 0, 'campinas': 90, 'santo andré': 20, 'são bernardo': 22, 'jundiaí': 50 },
+        'campinas': { 'são paulo': 90, 'campinas': 0, 'santo andré': 110, 'são bernardo': 112, 'jundiaí': 40 },
+        'santo andre': { 'são paulo': 20, 'campinas': 110, 'santo andré': 0, 'são bernardo': 5, 'jundiaí': 70 },
+        'sao bernardo': { 'são paulo': 22, 'campinas': 112, 'santo andré': 5, 'são bernardo': 0, 'jundiaí': 72 },
+        'jundiai': { 'são paulo': 50, 'campinas': 40, 'santo andré': 70, 'são bernardo': 72, 'jundiaí': 0 }
+    };
+
+    function normalizeString(str) {
+        if (!str) return '';
+        return str.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    }
+
+    function getDistance(fromCity, toLocation) {
+        const fromNorm = normalizeString(fromCity);
+        const toCity = toLocation.split('-')[0].trim();
+        const toNorm = normalizeString(toCity);
+        
+        if (fromNorm === toNorm) return 0;
+        
+        if (distanceMatrix[fromNorm] && distanceMatrix[fromNorm][toNorm] !== undefined) {
+            return distanceMatrix[fromNorm][toNorm];
+        }
+        
+        const key = Object.keys(distanceMatrix).find(k => k.includes(fromNorm) || fromNorm.includes(k));
+        if (key && distanceMatrix[key][toNorm] !== undefined) {
+            return distanceMatrix[key][toNorm];
+        }
+        
+        // Stable pseudo-random distance based on string hash
+        let hash = 0;
+        const combined = fromNorm + toNorm;
+        for (let i = 0; i < combined.length; i++) {
+            hash = combined.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        return Math.abs(hash % 130) + 15; // between 15 and 145 km
+    }
+    
     // Bind slider output display
     kmSlider.addEventListener('input', (e) => {
         kmValue.textContent = e.target.value === '120' ? 'Sem Limite' : `${e.target.value}.000 km`;
+    });
+    
+    // Bind radius slider output display
+    radiusSlider.addEventListener('input', (e) => {
+        radiusValue.textContent = e.target.value === '150' ? 'Sem Limite' : `${e.target.value} km`;
     });
     
     // Simulate Hunter crawler Search
@@ -617,6 +666,8 @@ function setupHunterModule() {
         const query = modelInput.value.trim().toLowerCase();
         const brand = brandSelect.value;
         const maxKm = parseInt(kmSlider.value) * 1000;
+        const refCity = cityInput.value.trim();
+        const maxRadius = parseInt(radiusSlider.value);
         
         // Filter elements
         let filtered = state.hunterAds;
@@ -633,6 +684,14 @@ function setupHunterModule() {
             filtered = filtered.filter(ad => ad.km <= maxKm);
         }
         
+        // Filter by Radius from reference City if provided
+        if (refCity && radiusSlider.value !== '150') {
+            filtered = filtered.filter(ad => {
+                const dist = getDistance(refCity, ad.location);
+                return dist <= maxRadius;
+            });
+        }
+        
         resultsContainer.innerHTML = '';
         
         if (filtered.length === 0) {
@@ -640,7 +699,7 @@ function setupHunterModule() {
                 <div class="card" style="text-align:center; padding:3rem; color:#71717a;">
                     <svg width="48" height="48" style="stroke:#71717a; margin-bottom:1rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
                     <p style="font-size:1rem; font-weight:600; color:#fff; margin-bottom:0.3rem;">Nenhum carro encontrado</p>
-                    <p style="font-size:0.85rem;">Tente ajustar as faixas de preço, quilometragem ou limpar os filtros de busca.</p>
+                    <p style="font-size:0.85rem;">Tente ajustar as faixas de raio, quilometragem ou limpar os filtros de busca.</p>
                 </div>
             `;
             return;
@@ -649,6 +708,10 @@ function setupHunterModule() {
         filtered.forEach(ad => {
             const adCard = document.createElement('div');
             adCard.className = 'car-result-card';
+            
+            // Calculate distance for this card's location
+            const distanceVal = getDistance(refCity, ad.location);
+            const distanceText = refCity ? `(~${distanceVal} km)` : '';
             
             adCard.innerHTML = `
                 <div class="car-image-placeholder">
@@ -677,7 +740,7 @@ function setupHunterModule() {
                         </div>
                         <div class="car-meta-item">
                             <span class="label">Localização</span>
-                            <span class="value">${ad.location}</span>
+                            <span class="value">${ad.location} <strong style="color:var(--accent-solid); font-weight:600; font-size:0.75rem; margin-left:0.2rem;">${distanceText}</strong></span>
                         </div>
                     </div>
                     

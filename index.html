@@ -256,6 +256,20 @@
                         </div>
 
                         <div class="filter-group">
+                            <label>Cidade de Origem</label>
+                            <input type="text" class="filter-text" id="hunter-city-input" placeholder="Ex: São Paulo, Campinas..." value="São Paulo">
+                        </div>
+
+                        <div class="filter-group">
+                            <label>Raio de Distância</label>
+                            <div class="range-display">
+                                <span>0 km</span>
+                                <span id="hunter-radius-value">50 km</span>
+                            </div>
+                            <input type="range" class="range-slider" id="hunter-radius-slider" min="10" max="150" step="10" value="50">
+                        </div>
+
+                        <div class="filter-group">
                             <label>Quilometragem Máxima</label>
                             <div class="range-display">
                                 <span>0 km</span>
