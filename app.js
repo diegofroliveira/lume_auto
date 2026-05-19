@@ -7,6 +7,12 @@ document.addEventListener('DOMContentLoaded', () => {
     initApp();
 });
 
+// Safe lowercase conversion helper preserving Steve Jobs' radical minimalist aesthetic
+function safeLower(str) {
+    if (str === null || str === undefined) return '';
+    return String(str).toLowerCase();
+}
+
 // ==========================================================================
 // STATE MANAGEMENT
 // ==========================================================================
@@ -281,27 +287,27 @@ async function loadChatsFromSupabase() {
                 const { data: msgs, error: msgsErr } = await supabase.from('messages').select('*').eq('lead_id', lead.id).order('created_at', { ascending: true });
                 
                 const messages = (msgs || []).map(m => {
-                    const date = new Date(m.created_at);
+                    const date = m.created_at ? new Date(m.created_at) : new Date();
                     const timeStr = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
                     return {
                         sender: m.sender_type === 'customer' ? 'received' : 'sent',
-                        text: m.content,
+                        text: m.content || '',
                         time: timeStr,
                         isAI: m.sender_type === 'ai'
                     };
                 });
                 
-                const initials = lead.customer_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
+                const initials = lead.customer_name ? lead.customer_name.split(' ').filter(Boolean).map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'LE';
                 
                 chats.push({
                     id: lead.id,
-                    name: lead.customer_name,
-                    channel: lead.channel,
-                    lastTime: new Date(lead.last_active_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                    name: lead.customer_name || 'lead sem nome',
+                    channel: lead.channel || 'whatsapp',
+                    lastTime: lead.last_active_time ? new Date(lead.last_active_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '--:--',
                     avatarText: initials || 'LE',
-                    vehicle: lead.vehicle_interested,
-                    aiStatus: lead.ai_status,
-                    lastMessage: lead.last_message,
+                    vehicle: lead.vehicle_interested || 'veículo não especificado',
+                    aiStatus: lead.ai_status || 'ai',
+                    lastMessage: lead.last_message || '',
                     messages: messages
                 });
             }
@@ -345,8 +351,8 @@ async function seedMockDataToSupabase() {
                 last_message: chat.lastMessage
             }).select().single();
             
-            if (leadErr) {
-                console.warn("Erro ao inserir lead no Supabase:", leadErr);
+            if (leadErr || !newLead) {
+                console.warn("Erro ao inserir lead no Supabase ou sem permissão de retorno:", leadErr);
                 continue;
             }
             
@@ -579,17 +585,17 @@ function setupInboxModule() {
             
             threadItem.innerHTML = `
                 <div class="chat-avatar-wrapper">
-                    <div class="chat-avatar">${chat.avatarText.toLowerCase()}</div>
+                    <div class="chat-avatar">${safeLower(chat.avatarText)}</div>
                     <div class="channel-badge ${chat.channel}">
                         ${getChannelIconSvg(chat.channel)}
                     </div>
                 </div>
                 <div class="chat-thread-info">
                     <div class="chat-thread-header">
-                        <span class="chat-name">${chat.name.toLowerCase()}</span>
-                        <span class="chat-time">${chat.lastTime.toLowerCase()}</span>
+                        <span class="chat-name">${safeLower(chat.name)}</span>
+                        <span class="chat-time">${safeLower(chat.lastTime)}</span>
                     </div>
-                    <div class="chat-last-message">${chat.lastMessage.toLowerCase()}</div>
+                    <div class="chat-last-message">${safeLower(chat.lastMessage)}</div>
                     <div class="chat-status-indicators">
                         <span class="status-pill ${chat.aiStatus}">${chat.aiStatus === 'ai' ? 'lume ai ativo' : 'atenção humana'}</span>
                     </div>
@@ -611,8 +617,8 @@ function setupInboxModule() {
         if (!chat) return;
         
         // Header
-        document.getElementById('active-chat-name').textContent = chat.name.toLowerCase();
-        document.getElementById('active-chat-vehicle').textContent = chat.vehicle.toLowerCase();
+        document.getElementById('active-chat-name').textContent = safeLower(chat.name);
+        document.getElementById('active-chat-vehicle').textContent = safeLower(chat.vehicle);
         
         // Render Messages
         msgContainer.innerHTML = '';
@@ -623,9 +629,9 @@ function setupInboxModule() {
             msgWrapper.className = `msg-wrapper ${isSent ? 'sent' : 'received'}`;
             
             msgWrapper.innerHTML = `
-                <div class="msg-bubble">${msg.text.toLowerCase()}</div>
+                <div class="msg-bubble">${safeLower(msg.text)}</div>
                 <div class="msg-meta">
-                    ${msg.time.toLowerCase()}
+                    ${safeLower(msg.time)}
                     ${msg.isAI ? '<span class="msg-agent-tag">lume ai</span>' : ''}
                 </div>
             `;
@@ -689,7 +695,8 @@ function setupInboxModule() {
             let replyText = 'Ok, vou conversar com minha esposa e te aviso.';
             
             // Simple keyword answering simulator
-            const lastMsg = chat.messages[chat.messages.length - 1].text.toLowerCase();
+            const lastMsgText = chat.messages.length > 0 ? chat.messages[chat.messages.length - 1].text : '';
+            const lastMsg = safeLower(lastMsgText);
             if (lastMsg.includes('preço') || lastMsg.includes('valor') || lastMsg.includes('desconto')) {
                 replyText = 'Vocês aceitam troca? Tenho uma moto Honda CG 160 que posso dar como entrada.';
             } else if (lastMsg.includes('visita') || lastMsg.includes('olhar') || lastMsg.includes('ver')) {
@@ -726,10 +733,11 @@ function setupInboxModule() {
             let escalate = false;
             
             // AI rules logic
-            if (buyerText.toLowerCase().includes('troca') || buyerText.toLowerCase().includes('moto') || buyerText.toLowerCase().includes('gol')) {
+            const buyerTextLower = safeLower(buyerText);
+            if (buyerTextLower.includes('troca') || buyerTextLower.includes('moto') || buyerTextLower.includes('gol')) {
                 aiText = 'Como a sua oferta envolve troca de veículo, vou transferir você agora mesmo para o nosso especialista humano. Um instante, ele já vai te responder!';
                 escalate = true;
-            } else if (buyerText.toLowerCase().includes('endereço') || buyerText.toLowerCase().includes('onde') || buyerText.toLowerCase().includes('visita')) {
+            } else if (buyerTextLower.includes('endereço') || buyerTextLower.includes('onde') || buyerTextLower.includes('visita')) {
                 aiText = 'Excelente! Estamos localizados na Av. Europa, 1200 - Jardins, São Paulo/SP. Já deixei pré-agendada a sua visita para amanhã às 14h. Aguardamos você!';
             } else {
                 aiText = 'Perfeito! Fico no seu aguardo. Se tiver qualquer outra dúvida sobre o carro, estou aqui para ajudar.';
@@ -890,11 +898,11 @@ function setupHunterModule() {
         let filtered = state.hunterAds;
         
         if (query) {
-            filtered = filtered.filter(ad => ad.title.toLowerCase().includes(query) || ad.version.toLowerCase().includes(query));
+            filtered = filtered.filter(ad => safeLower(ad.title).includes(query) || safeLower(ad.version).includes(query));
         }
         
         if (brand !== 'all') {
-            filtered = filtered.filter(ad => ad.title.toLowerCase().includes(brand));
+            filtered = filtered.filter(ad => safeLower(ad.title).includes(brand));
         }
         
         if (kmSlider.value !== '120') {
@@ -932,7 +940,7 @@ function setupHunterModule() {
             
             adCard.innerHTML = `
                 <div class="car-image-placeholder">
-                    <span class="car-source-badge ${ad.source}">${ad.source.toLowerCase()}</span>
+                    <span class="car-source-badge ${ad.source}">${safeLower(ad.source)}</span>
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
                         <path d="M19 17h2c.6 0 1-.4 1-1v-3c0-.9-.7-1.7-1.5-1.9C18.7 10.6 16 10 16 10s-1.3-1.4-2.2-2.3C13 6.8 11.5 6 10 6H4c-1.1 0-2 .9-2 2v8c0 .6.4 1 1 1h2m10 0a3 3 0 1 1-6 0m6 0a3 3 0 1 0-6 0m11 0a3 3 0 1 1-6 0m6 0a3 3 0 1 0-6 0"/>
                     </svg>
@@ -940,8 +948,8 @@ function setupHunterModule() {
                 <div class="car-details-panel">
                     <div class="car-header">
                         <div class="car-title-wrapper">
-                            <h3>${ad.title.toLowerCase()}</h3>
-                            <div class="car-version">${ad.version.toLowerCase()}</div>
+                            <h3>${safeLower(ad.title)}</h3>
+                            <div class="car-version">${safeLower(ad.version)}</div>
                         </div>
                         <div class="car-price-badge">r$ ${ad.price.toLocaleString('pt-BR')}</div>
                     </div>
@@ -957,11 +965,11 @@ function setupHunterModule() {
                         </div>
                         <div class="car-meta-item">
                             <span class="label">localização</span>
-                            <span class="value">${ad.location.toLowerCase()} <strong style="color:var(--accent-solid); font-weight:600; font-size:0.75rem; margin-left:0.2rem;">${distanceText.toLowerCase()}</strong></span>
+                            <span class="value">${safeLower(ad.location)} <strong style="color:var(--accent-solid); font-weight:600; font-size:0.75rem; margin-left:0.2rem;">${safeLower(distanceText)}</strong></span>
                         </div>
                     </div>
                     
-                    <span class="car-analysis-tag">${ad.analysis.toLowerCase()}</span>
+                    <span class="car-analysis-tag">${safeLower(ad.analysis)}</span>
                     
                     <div class="car-actions-wrapper">
                         <a href="${ad.url}" target="_blank" class="btn-secondary" style="padding:0.5rem 1rem; font-size:0.8rem; text-decoration:none;">
@@ -1002,7 +1010,7 @@ function setupRadarModule() {
     });
     
     function performRadarSearch() {
-        const query = searchInput.value.trim().toLowerCase();
+        const query = safeLower(searchInput.value.trim());
         let matchedKey = null;
         
         // Find best match in our static database
@@ -1028,13 +1036,13 @@ function setupRadarModule() {
         dashboardView.style.display = 'grid';
         
         // Render values
-        document.getElementById('radar-car-name').textContent = vehicle.name.toLowerCase();
-        document.getElementById('radar-car-details').textContent = vehicle.details.toLowerCase();
+        document.getElementById('radar-car-name').textContent = safeLower(vehicle.name);
+        document.getElementById('radar-car-details').textContent = safeLower(vehicle.details);
         
         // Level badge
         const levelBadge = document.getElementById('radar-risk-badge');
         levelBadge.className = `radar-alert-level level-${vehicle.riskLevel}`;
-        levelBadge.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> ${vehicle.riskText.toLowerCase()}`;
+        levelBadge.innerHTML = `<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg> ${safeLower(vehicle.riskText)}`;
         
         // Render Chronics Alerts
         const chronicsList = document.getElementById('radar-chronics-list');
@@ -1047,8 +1055,8 @@ function setupRadarModule() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/></svg>
                 </div>
                 <div class="chronic-issue-content">
-                    <h4>${issue.title.toLowerCase()}</h4>
-                    <p>${issue.desc.toLowerCase()}</p>
+                    <h4>${safeLower(issue.title)}</h4>
+                    <p>${safeLower(issue.desc)}</p>
                 </div>
             `;
             chronicsList.appendChild(issueBox);
@@ -1064,7 +1072,7 @@ function setupRadarModule() {
             
             barWrapper.innerHTML = `
                 <div class="sentiment-bar-header">
-                    <span class="sentiment-bar-label">${stat.label.toLowerCase()}</span>
+                    <span class="sentiment-bar-label">${safeLower(stat.label)}</span>
                     <span class="sentiment-bar-percent ${isNegative ? 'neg' : ''}">${stat.score}% positivo</span>
                 </div>
                 <div class="sentiment-bar-track">
@@ -1075,7 +1083,7 @@ function setupRadarModule() {
         });
         
         // Owner quotes
-        document.getElementById('radar-owner-comment').textContent = vehicle.quote.toLowerCase();
+        document.getElementById('radar-owner-comment').textContent = safeLower(vehicle.quote);
         
         // Render Checklist
         renderChecklist(vehicle.checklist);
@@ -1095,8 +1103,8 @@ function setupRadarModule() {
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 6L9 17l-5-5"/></svg>
                 </div>
                 <div class="checklist-item-content">
-                    <h5>${item.title.toLowerCase()}</h5>
-                    <p>${item.desc.toLowerCase()}</p>
+                    <h5>${safeLower(item.title)}</h5>
+                    <p>${safeLower(item.desc)}</p>
                 </div>
             `;
             
@@ -1113,7 +1121,7 @@ function setupRadarModule() {
         defaultPlaceholder.style.display = 'none';
         dashboardView.style.display = 'grid';
         
-        document.getElementById('radar-car-name').textContent = modelName.toLowerCase();
+        document.getElementById('radar-car-name').textContent = safeLower(modelName);
         document.getElementById('radar-car-details').textContent = 'modelo avaliado via motor de análise lume.';
         
         const levelBadge = document.getElementById('radar-risk-badge');
