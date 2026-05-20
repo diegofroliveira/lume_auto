@@ -3,9 +3,13 @@
    Steve Jobs' Philosophy: Uncompromising Craftsmanship & Intuitive Detail
    ========================================================================== */
 
-document.addEventListener('DOMContentLoaded', () => {
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initApp();
+    });
+} else {
     initApp();
-});
+}
 
 // Safe lowercase conversion helper preserving Steve Jobs' radical minimalist aesthetic
 function safeLower(str) {
