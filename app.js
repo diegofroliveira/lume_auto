@@ -3,13 +3,7 @@
    Steve Jobs' Philosophy: Uncompromising Craftsmanship & Intuitive Detail
    ========================================================================== */
 
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', () => {
-        initApp();
-    });
-} else {
-    initApp();
-}
+// App initialization block is deferred to the end of the file to prevent TDZ ReferenceErrors on const state
 
 // Safe lowercase conversion helper preserving Steve Jobs' radical minimalist aesthetic
 function safeLower(str) {
@@ -1265,4 +1259,15 @@ function setupRadarModule() {
             console.log(reportDetails);
         });
     }
+}
+
+// ==========================================================================
+// APPLICATION INITIALIZATION EXECUTION
+// ==========================================================================
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => {
+        initApp();
+    });
+} else {
+    initApp();
 }
