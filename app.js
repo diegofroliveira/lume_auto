@@ -444,10 +444,7 @@ function initApp() {
 }
 
 function setupNavigation() {
-    const navItems = document.querySelectorAll('.nav-item');
-    const sections = document.querySelectorAll('.view-section');
-    const headerTitle = document.querySelector('.header-title h1');
-    const headerSub = document.querySelector('.header-title p');
+    console.log('[Lume Engine] Inicializando Navegação...');
     
     const titles = {
         dashboard: { main: 'visão geral', sub: 'monitoramento em tempo real da inteligência lume' },
@@ -455,43 +452,53 @@ function setupNavigation() {
         hunter: { main: 'garimpo', sub: 'agregador inteligente de ofertas olx, webmotors e marketplace' },
         radar: { main: 'radar de crônicos', sub: 'dossiê técnico de falhas conhecidas e opinião de donos' }
     };
-    
-    if (navItems) {
-        navItems.forEach(item => {
-            item.addEventListener('click', () => {
-                const targetTab = item.getAttribute('data-tab');
-                if (!targetTab) return;
-                
-                state.currentTab = targetTab;
-                
-                // Toggle active classes on nav
-                navItems.forEach(n => n.classList.remove('active'));
-                item.classList.add('active');
-                
-                // Toggle active section
-                if (sections) {
-                    sections.forEach(sec => {
-                        sec.classList.remove('active');
-                        if (sec.id === `${targetTab}-section`) {
-                            sec.classList.add('active');
-                        }
-                    });
-                }
-                
-                // Update Header text
-                if (headerTitle && titles[targetTab]) {
-                    headerTitle.textContent = titles[targetTab].main;
-                }
-                if (headerSub && titles[targetTab]) {
-                    headerSub.textContent = titles[targetTab].sub;
-                }
-                
-                if (targetTab === 'dashboard') {
-                    updateDashboardSummary();
+
+    // Event delegation on document level to guarantee click works no matter when/how DOM is ready
+    document.addEventListener('click', (e) => {
+        const item = e.target.closest('.nav-item');
+        if (!item) return;
+        
+        const targetTab = item.getAttribute('data-tab');
+        if (!targetTab) return;
+        
+        console.log(`[Lume Navigation] Tab clicked: ${targetTab}`);
+        
+        state.currentTab = targetTab;
+        
+        // Toggle active classes on nav
+        const navItems = document.querySelectorAll('.nav-item');
+        if (navItems) {
+            navItems.forEach(n => n.classList.remove('active'));
+        }
+        item.classList.add('active');
+        
+        // Toggle active section
+        const sections = document.querySelectorAll('.view-section');
+        if (sections) {
+            sections.forEach(sec => {
+                sec.classList.remove('active');
+                if (sec.id === `${targetTab}-section`) {
+                    sec.classList.add('active');
                 }
             });
-        });
-    }
+        }
+        
+        // Update Header text
+        const headerTitle = document.querySelector('.header-title h1');
+        const headerSub = document.querySelector('.header-title p');
+        if (headerTitle && titles[targetTab]) {
+            headerTitle.textContent = titles[targetTab].main;
+        }
+        if (headerSub && titles[targetTab]) {
+            headerSub.textContent = titles[targetTab].sub;
+        }
+        
+        if (targetTab === 'dashboard') {
+            updateDashboardSummary();
+        }
+    });
+
+    console.log('[Lume Engine] Delegador de eventos de navegação configurado com sucesso!');
 }
 
 function updateDashboardSummary() {
